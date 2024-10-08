@@ -2,6 +2,6 @@ package models
 
 type File struct {
 	Name         string
-	CreationDate string
-	UpdateDate   string
+	CreationDate int64
+	UpdateDate   int64
 }
