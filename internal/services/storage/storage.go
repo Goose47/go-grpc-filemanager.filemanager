@@ -14,7 +14,7 @@ type FileSaver interface {
 	SaveFile(filename string, data []byte) (int, error)
 }
 type FileProvider interface {
-	File() ([]byte, error)
+	File(filename string) ([]byte, error)
 	Files() ([]models.File, error)
 }
 
@@ -68,7 +68,7 @@ func (s *Storage) ListFiles(ctx context.Context) ([]models.File, error) {
 	if err != nil {
 		log.Error("failed to retrieve files", slog.Any("error", err))
 
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return []models.File{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("files retrieved successfully")
@@ -83,7 +83,7 @@ func (s *Storage) File(ctx context.Context, filename string) ([]byte, error) {
 
 	log.Info("trying to find file")
 
-	fileData, err := s.fileProvider.File()
+	fileData, err := s.fileProvider.File(filename)
 	if err != nil {
 		if errors.Is(err, storage.ErrFileNotFound) {
 			log.Warn("file is not found", slog.Any("error", err))
