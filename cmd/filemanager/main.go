@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"filemanager/internal/app"
+	"filemanager/internal/config"
+	"filemanager/internal/logger"
+)
 
 func main() {
-	fmt.Println("Hello, world!")
+	cfg := config.MustLoad()
+	log := logger.New(cfg.Env)
+
+	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath)
+	application.GRPCServer.MustRun()
 }
