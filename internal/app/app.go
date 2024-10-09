@@ -13,6 +13,7 @@ type App struct {
 func New(
 	log *slog.Logger,
 	grpcPort int,
+	storagePath string,
 ) *App {
 
 	storageService := storage.New(log, nil, nil)
