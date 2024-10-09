@@ -19,7 +19,7 @@ type serverAPI struct {
 }
 
 type Storage interface {
-	SaveFile(fileData []byte) (bytes int, filename string, err error)
+	SaveFile(ctx context.Context, fileData []byte) (bytes int, filename string, err error)
 	ListFiles(ctx context.Context) ([]models.File, error)
 	File(ctx context.Context, filename string) ([]byte, error)
 }
@@ -47,7 +47,7 @@ func (s *serverAPI) Upload(
 	}
 
 	// todo simultaneously read and write
-	_, filename, err := s.storage.SaveFile(fileData)
+	_, filename, err := s.storage.SaveFile(stream.Context(), fileData)
 	if err != nil {
 		return status.Error(codes.Internal, "failed to save file")
 	}
