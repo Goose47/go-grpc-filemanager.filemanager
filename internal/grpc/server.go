@@ -28,7 +28,7 @@ func Register(gRPCServer *grpc.Server, storage Storage) {
 	gen.RegisterFileManagerServer(gRPCServer, &serverAPI{storage: storage})
 }
 
-func (s *serverAPI) UploadFile(
+func (s *serverAPI) Upload(
 	stream gen.FileManager_UploadServer,
 ) error {
 	var fileData []byte
@@ -59,7 +59,7 @@ func (s *serverAPI) UploadFile(
 
 	return nil
 }
-func (s *serverAPI) ListFiles(
+func (s *serverAPI) List(
 	ctx context.Context,
 	in *gen.ListRequest,
 ) (*gen.ListResponse, error) {
