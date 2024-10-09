@@ -1,8 +1,10 @@
 package grpcapp
 
 import (
+	"context"
 	filemanagergrpc "filemanager/internal/grpc"
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -27,8 +29,15 @@ func New(log *slog.Logger, storageService filemanagergrpc.Storage, port int) *Ap
 		}),
 	}
 
+	loggingOpts := []logging.Option{
+		logging.WithLogOnEvents(
+			logging.PayloadReceived, logging.PayloadSent,
+		),
+	}
+
 	gRPCServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		recovery.UnaryServerInterceptor(recoveryOpts...),
+		logging.UnaryServerInterceptor(InterceptorLogger(log), loggingOpts...),
 	))
 
 	filemanagergrpc.Register(gRPCServer, storageService)
@@ -38,6 +47,13 @@ func New(log *slog.Logger, storageService filemanagergrpc.Storage, port int) *Ap
 		gRPCServer: gRPCServer,
 		port:       port,
 	}
+}
+
+// InterceptorLogger is a wrapper for slog to use in interceptor
+func InterceptorLogger(l *slog.Logger) logging.Logger {
+	return logging.LoggerFunc(func(ctx context.Context, level logging.Level, msg string, fields ...any) {
+		l.Log(ctx, slog.Level(level), msg, fields...)
+	})
 }
 
 // MustRun runs gRPC server and panics if any error occurs
