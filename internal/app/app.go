@@ -3,6 +3,7 @@ package app
 import (
 	grpcapp "filemanager/internal/app/grpc"
 	"filemanager/internal/services/storage"
+	"filemanager/internal/storage/disk"
 	"log/slog"
 )
 
@@ -15,8 +16,8 @@ func New(
 	grpcPort int,
 	storagePath string,
 ) *App {
-
-	storageService := storage.New(log, nil, nil)
+	diskStorage := disk.New(storagePath)
+	storageService := storage.New(log, diskStorage, diskStorage)
 	grpcApp := grpcapp.New(log, storageService, grpcPort)
 
 	return &App{
