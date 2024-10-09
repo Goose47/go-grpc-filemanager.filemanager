@@ -6,11 +6,11 @@ import (
 	"filemanager/internal/models"
 	"filemanager/internal/storage"
 	"fmt"
-	"golang.org/x/sys/unix"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
+	"syscall"
 	"time"
 )
 
@@ -127,7 +127,7 @@ func getFileTimes(filePath string) (modTime, changeTime time.Time, err error) {
 	}
 
 	modTime = fileInfo.ModTime()
-	stat := fileInfo.Sys().(*unix.Stat_t)
+	stat := fileInfo.Sys().(*syscall.Stat_t)
 	changeTime = time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec)) // closest approximation to creation time
 
 	return modTime, changeTime, nil
