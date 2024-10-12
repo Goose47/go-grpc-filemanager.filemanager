@@ -13,7 +13,7 @@ func main() {
 	cfg := config.MustLoad()
 	log := logger.New(cfg.Env)
 
-	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath)
+	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.GRPC.MaxUnaryConnections, cfg.GRPC.MaxStreamConnections)
 	go func() {
 		application.GRPCServer.MustRun()
 	}()

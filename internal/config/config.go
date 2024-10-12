@@ -15,9 +15,11 @@ type Config struct {
 }
 
 type GRPCConfig struct {
-	Port    int           `yaml:"port"`
-	Host    string        `yaml:"host"`
-	Timeout time.Duration `yaml:"timeout"`
+	Port                 int           `yaml:"port"`
+	Host                 string        `yaml:"host"`
+	Timeout              time.Duration `yaml:"timeout"`
+	MaxUnaryConnections  int           `yaml:"max_unary_connections"`
+	MaxStreamConnections int           `yaml:"max_stream_connections"`
 }
 
 // LoadPath loads configuration from specified path and returns config instance and error

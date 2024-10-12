@@ -15,10 +15,12 @@ func New(
 	log *slog.Logger,
 	grpcPort int,
 	storagePath string,
+	maxUnaryConnections int,
+	maxStreamConnections int,
 ) *App {
 	diskStorage := disk.New(storagePath)
 	storageService := storage.New(log, diskStorage, diskStorage)
-	grpcApp := grpcapp.New(log, storageService, grpcPort)
+	grpcApp := grpcapp.New(log, storageService, grpcPort, maxUnaryConnections, maxStreamConnections)
 
 	return &App{
 		grpcApp,

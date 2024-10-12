@@ -3,6 +3,7 @@ package grpcapp
 import (
 	"context"
 	filemanagergrpc "filemanager/internal/grpc"
+	"filemanager/internal/lib/grpc/interceptors"
 	"fmt"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -20,7 +21,13 @@ type App struct {
 }
 
 // New creates new gRPC server app.
-func New(log *slog.Logger, storageService filemanagergrpc.Storage, port int) *App {
+func New(
+	log *slog.Logger,
+	storageService filemanagergrpc.Storage,
+	port int,
+	maxUnaryConnections int,
+	maxStreamConnections int,
+) *App {
 	recoveryOpts := []recovery.Option{
 		recovery.WithRecoveryHandler(func(p interface{}) (err error) {
 			log.Error("Recovered from panic", slog.Any("panic", p))
@@ -35,10 +42,16 @@ func New(log *slog.Logger, storageService filemanagergrpc.Storage, port int) *Ap
 		),
 	}
 
-	gRPCServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
-		recovery.UnaryServerInterceptor(recoveryOpts...),
-		logging.UnaryServerInterceptor(InterceptorLogger(log), loggingOpts...),
-	))
+	gRPCServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			recovery.UnaryServerInterceptor(recoveryOpts...),
+			logging.UnaryServerInterceptor(InterceptorLogger(log), loggingOpts...),
+			interceptors.NewUnaryLimiter(maxUnaryConnections),
+		),
+		grpc.ChainStreamInterceptor(
+			interceptors.NewStreamLimiter(maxStreamConnections),
+		),
+	)
 
 	filemanagergrpc.Register(gRPCServer, storageService)
 
