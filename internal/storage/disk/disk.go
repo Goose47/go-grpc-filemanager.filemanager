@@ -2,6 +2,7 @@ package disk
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"filemanager/internal/models"
 	"filemanager/internal/storage"
@@ -25,7 +26,7 @@ func New(storagePath string) *Disk {
 }
 
 // SaveFile saves file from byte array
-func (d *Disk) SaveFile(filename string, data []byte) (int, error) {
+func (d *Disk) SaveFile(ctx context.Context, filename string, data []byte) (int, error) {
 	const op = "disk.SaveFile"
 
 	fullPath := path.Join(d.BasePath, filename)
@@ -49,7 +50,7 @@ func (d *Disk) SaveFile(filename string, data []byte) (int, error) {
 }
 
 // File reads file specified in filename and returns its contents
-func (d *Disk) File(filename string) ([]byte, error) {
+func (d *Disk) File(ctx context.Context, filename string) ([]byte, error) {
 	const op = "disk.SaveFile"
 
 	fullPath := path.Join(d.BasePath, filename)
@@ -86,24 +87,24 @@ func (d *Disk) File(filename string) ([]byte, error) {
 }
 
 // Files retrieves all uploaded files creation and update date
-func (d *Disk) Files() ([]models.File, error) {
+func (d *Disk) Files(ctx context.Context) ([]models.File, error) {
 	const op = "disk.Files"
 
 	var files []models.File
 
-	err := filepath.Walk(d.BasePath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(d.BasePath, func(fullPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if !info.IsDir() {
-			modTime, changeTime, err := getFileTimes(path)
+			modTime, changeTime, err := getFileTimes(fullPath)
 			if err != nil {
-				return fmt.Errorf("error retrieving times for file %s: %v", path, err)
+				return fmt.Errorf("error retrieving times for file %s: %v", fullPath, err)
 			}
 
 			files = append(files, models.File{
-				Name:         path,
+				Name:         path.Base(fullPath),
 				CreationDate: modTime.Unix(),
 				UpdateDate:   changeTime.Unix(),
 			})
