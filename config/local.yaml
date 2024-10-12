@@ -4,3 +4,5 @@ grpc:
   port: 44044
   host: ""
   timeout: 10h
+  max_unary_connections: 100
+  max_stream_connections: 10
