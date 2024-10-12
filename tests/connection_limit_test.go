@@ -27,9 +27,12 @@ func TestConnectionLimit_MaxConcurrentClientStreamCalls(t *testing.T) {
 		}()
 	}
 
-	stream, err := st.NewClient()
+	c, err := st.NewClient()
+	require.NoError(t, err)
+	require.NotEmpty(t, c)
+
+	_, err = c.File(ctx, &gen.FileRequest{})
 	require.Error(t, err)
-	require.Empty(t, stream)
 
 	for range st.Cfg.GRPC.MaxStreamConnections {
 		done <- true
