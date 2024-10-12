@@ -11,11 +11,11 @@ import (
 )
 
 type FileSaver interface {
-	SaveFile(filename string, data []byte) (int, error)
+	SaveFile(ctx context.Context, filename string, data []byte) (int, error)
 }
 type FileProvider interface {
-	File(filename string) ([]byte, error)
-	Files() ([]models.File, error)
+	File(ctx context.Context, filename string) ([]byte, error)
+	Files(ctx context.Context) ([]models.File, error)
 }
 
 type Storage struct {
@@ -45,7 +45,7 @@ func (s *Storage) SaveFile(ctx context.Context, fileData []byte) (int, string, e
 
 	log.Info("trying to save file")
 
-	bytes, err := s.fileSaver.SaveFile(filename, fileData)
+	bytes, err := s.fileSaver.SaveFile(ctx, filename, fileData)
 	if err != nil {
 		log.Error("failed to save file", slog.Any("error", err))
 
@@ -64,7 +64,7 @@ func (s *Storage) ListFiles(ctx context.Context) ([]models.File, error) {
 
 	log.Info("retrieving files")
 
-	files, err := s.fileProvider.Files()
+	files, err := s.fileProvider.Files(ctx)
 	if err != nil {
 		log.Error("failed to retrieve files", slog.Any("error", err))
 
@@ -83,7 +83,7 @@ func (s *Storage) File(ctx context.Context, filename string) ([]byte, error) {
 
 	log.Info("trying to find file")
 
-	fileData, err := s.fileProvider.File(filename)
+	fileData, err := s.fileProvider.File(ctx, filename)
 	if err != nil {
 		if errors.Is(err, storage.ErrFileNotFound) {
 			log.Warn("file is not found", slog.Any("error", err))
