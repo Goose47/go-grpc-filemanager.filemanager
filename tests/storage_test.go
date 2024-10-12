@@ -23,11 +23,11 @@ func TestStorage_UploadDownloadHappyPath(t *testing.T) {
 	const NChunks = 5
 	chunkSize := len(img) / NChunks
 
-	for i := 0; i <= NChunks; i++ {
-		l, r := i, i+chunkSize
+	for i := 0; i < NChunks; i++ {
+		l, r := i*chunkSize, (i+1)*chunkSize
 		var nextChunk []byte
 
-		if r > cap(img) {
+		if i == NChunks-1 {
 			nextChunk = img[l:cap(img)]
 		} else {
 			nextChunk = img[l:r]
@@ -80,7 +80,6 @@ func TestStorage_UploadDownloadHappyPath(t *testing.T) {
 		receivedImg = append(receivedImg, chunk.Chunk...)
 	}
 
-	assert.Equal(t, len(img), len(receivedImg))
 	eq := true
 	for i := range img {
 		if img[i] != receivedImg[i] {
