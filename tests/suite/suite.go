@@ -17,7 +17,7 @@ type Suite struct {
 	Client gen.FileManagerClient
 }
 
-const configPath = "./config/local_tests.yaml"
+const configPath = "../config/local_tests.yaml"
 
 func New(t *testing.T) (context.Context, *Suite) {
 	t.Helper()
@@ -35,7 +35,7 @@ func New(t *testing.T) (context.Context, *Suite) {
 	gRPCAddress := net.JoinHostPort(cfg.GRPC.Host, strconv.Itoa(cfg.GRPC.Port))
 	cc, err := grpc.NewClient(gRPCAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		t.Fatalf("failed to connect to grpc server: %w", err)
+		t.Fatalf("failed to connect to grpc server: %v", err)
 	}
 
 	client := gen.NewFileManagerClient(cc)

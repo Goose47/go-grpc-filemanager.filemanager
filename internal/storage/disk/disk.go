@@ -31,7 +31,7 @@ func (d *Disk) SaveFile(ctx context.Context, filename string, data []byte) (int,
 
 	fullPath := path.Join(d.BasePath, filename)
 
-	if _, err := os.Stat(fullPath); err != nil {
+	if _, err := os.Stat(fullPath); err == nil {
 		return 0, fmt.Errorf("%s: %w", op, storage.ErrFileExists)
 	}
 
