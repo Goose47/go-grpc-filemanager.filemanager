@@ -3,6 +3,7 @@ package suite
 import (
 	"context"
 	"filemanager/internal/config"
+	"fmt"
 	gen "github.com/Goose47/go-grpc-filemanager.protos/gen/go/filemanager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -32,17 +33,33 @@ func New(t *testing.T) (context.Context, *Suite) {
 		cancel()
 	})
 
-	gRPCAddress := net.JoinHostPort(cfg.GRPC.Host, strconv.Itoa(cfg.GRPC.Port))
-	cc, err := grpc.NewClient(gRPCAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	client, err := createGRPCClient(cfg.GRPC.Host, cfg.GRPC.Port)
 	if err != nil {
-		t.Fatalf("failed to connect to grpc server: %v", err)
+		t.Fatal(err)
 	}
-
-	client := gen.NewFileManagerClient(cc)
 
 	return ctx, &Suite{
 		T:      t,
 		Cfg:    cfg,
 		Client: client,
 	}
+}
+
+func (s *Suite) NewClient() (gen.FileManagerClient, error) {
+	return createGRPCClient(s.Cfg.GRPC.Host, s.Cfg.GRPC.Port)
+}
+
+func createGRPCClient(
+	host string,
+	port int,
+) (gen.FileManagerClient, error) {
+	gRPCAddress := net.JoinHostPort(host, strconv.Itoa(port))
+	cc, err := grpc.NewClient(gRPCAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to grpc server: %v", err)
+	}
+
+	client := gen.NewFileManagerClient(cc)
+
+	return client, nil
 }
