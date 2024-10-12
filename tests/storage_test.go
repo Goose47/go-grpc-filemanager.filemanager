@@ -81,7 +81,13 @@ func TestStorage_UploadDownloadHappyPath(t *testing.T) {
 	}
 
 	assert.Equal(t, len(img), len(receivedImg))
+	eq := true
 	for i := range img {
-		assert.Equal(t, img[i], receivedImg[i])
+		if img[i] != receivedImg[i] {
+			eq = false
+			break
+		}
 	}
+
+	assert.True(t, eq)
 }
