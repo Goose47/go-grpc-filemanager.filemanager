@@ -97,5 +97,7 @@ func (s *Storage) FileReader(ctx context.Context, filename string) (io.ReadClose
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	log.Info("file found successfully")
+
 	return file, nil
 }
