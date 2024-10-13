@@ -7,6 +7,7 @@ import (
 	"filemanager/internal/models"
 	"filemanager/internal/storage"
 	"fmt"
+	"io"
 	"log/slog"
 )
 
@@ -14,7 +15,7 @@ type FileSaver interface {
 	SaveFile(ctx context.Context, filename string, data []byte) (int, error)
 }
 type FileProvider interface {
-	File(ctx context.Context, filename string) ([]byte, error)
+	File(ctx context.Context, filename string) (io.ReadCloser, error)
 	Files(ctx context.Context) ([]models.File, error)
 }
 
@@ -76,14 +77,14 @@ func (s *Storage) ListFiles(ctx context.Context) ([]models.File, error) {
 	return files, nil
 }
 
-func (s *Storage) File(ctx context.Context, filename string) ([]byte, error) {
+func (s *Storage) FileReader(ctx context.Context, filename string) (io.ReadCloser, error) {
 	const op = "storage.File"
 
 	log := s.log.With(slog.String("op", op), slog.String("filename", filename))
 
 	log.Info("trying to find file")
 
-	fileData, err := s.fileProvider.File(ctx, filename)
+	file, err := s.fileProvider.File(ctx, filename)
 	if err != nil {
 		if errors.Is(err, storage.ErrFileNotFound) {
 			log.Warn("file is not found", slog.Any("error", err))
@@ -96,5 +97,5 @@ func (s *Storage) File(ctx context.Context, filename string) ([]byte, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return fileData, nil
+	return file, nil
 }

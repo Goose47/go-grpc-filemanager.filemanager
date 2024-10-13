@@ -1,9 +1,7 @@
 package disk
 
 import (
-	"bufio"
 	"context"
-	"errors"
 	"filemanager/internal/models"
 	"filemanager/internal/storage"
 	"fmt"
@@ -50,7 +48,7 @@ func (d *Disk) SaveFile(ctx context.Context, filename string, data []byte) (int,
 }
 
 // File reads file specified in filename and returns its contents
-func (d *Disk) File(ctx context.Context, filename string) ([]byte, error) {
+func (d *Disk) File(ctx context.Context, filename string) (io.ReadCloser, error) {
 	const op = "disk.SaveFile"
 
 	fullPath := path.Join(d.BasePath, filename)
@@ -63,27 +61,8 @@ func (d *Disk) File(ctx context.Context, filename string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, storage.ErrFileNotFound)
 	}
-	defer file.Close()
 
-	var fileData []byte
-	reader := bufio.NewReader(file)
-	buf := make([]byte, 256)
-
-	for {
-		_, err := reader.Read(buf)
-
-		if errors.Is(err, io.EOF) {
-			break
-		}
-
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", op, err)
-		}
-
-		fileData = append(fileData, buf...)
-	}
-
-	return fileData, nil
+	return file, nil
 }
 
 // Files retrieves all uploaded files creation and update date

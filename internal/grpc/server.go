@@ -1,7 +1,6 @@
 package filemanagergrpc
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"filemanager/internal/models"
@@ -21,7 +20,7 @@ type serverAPI struct {
 type Storage interface {
 	SaveFile(ctx context.Context, fileData []byte) (bytes int, filename string, err error)
 	ListFiles(ctx context.Context) ([]models.File, error)
-	File(ctx context.Context, filename string) ([]byte, error)
+	FileReader(ctx context.Context, filename string) (io.ReadCloser, error)
 }
 
 func Register(gRPCServer *grpc.Server, storage Storage) {
@@ -92,8 +91,8 @@ func (s *serverAPI) File(
 		return status.Error(codes.InvalidArgument, "filename is required")
 	}
 
-	// todo simultaneously read and write
-	byteArray, err := s.storage.File(stream.Context(), in.Filename)
+	reader, err := s.storage.FileReader(stream.Context(), in.Filename)
+	defer reader.Close()
 
 	if err != nil {
 		if errors.Is(err, storage.ErrFileNotFound) {
@@ -103,7 +102,6 @@ func (s *serverAPI) File(
 		return status.Error(codes.Internal, "failed to retrieve file")
 	}
 
-	reader := bytes.NewReader(byteArray)
 	const chunkSize = 1024 // chunk size in bytes
 	buf := make([]byte, chunkSize)
 
