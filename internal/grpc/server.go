@@ -18,7 +18,7 @@ type serverAPI struct {
 }
 
 type Storage interface {
-	SaveFile(ctx context.Context, fileData []byte) (bytes int, filename string, err error)
+	FileWriter(ctx context.Context) (closer io.WriteCloser, filename string, err error)
 	ListFiles(ctx context.Context) ([]models.File, error)
 	FileReader(ctx context.Context, filename string) (io.ReadCloser, error)
 }
@@ -30,7 +30,11 @@ func Register(gRPCServer *grpc.Server, storage Storage) {
 func (s *serverAPI) Upload(
 	stream gen.FileManager_UploadServer,
 ) error {
-	var fileData []byte
+	writer, filename, err := s.storage.FileWriter(stream.Context())
+	if err != nil {
+		return status.Error(codes.Internal, "failed to create file")
+	}
+	defer writer.Close()
 
 	for {
 		req, err := stream.Recv()
@@ -42,13 +46,10 @@ func (s *serverAPI) Upload(
 			return status.Error(codes.Internal, "error while reading")
 		}
 
-		fileData = append(fileData, req.GetChunk()...)
-	}
-
-	// todo simultaneously read and write
-	_, filename, err := s.storage.SaveFile(stream.Context(), fileData)
-	if err != nil {
-		return status.Error(codes.Internal, "failed to save file")
+		_, err = writer.Write(req.GetChunk())
+		if err != nil {
+			return status.Error(codes.Internal, "error while writing")
+		}
 	}
 
 	err = stream.SendAndClose(&gen.UploadResponse{
@@ -60,6 +61,7 @@ func (s *serverAPI) Upload(
 
 	return nil
 }
+
 func (s *serverAPI) List(
 	ctx context.Context,
 	in *gen.ListRequest,

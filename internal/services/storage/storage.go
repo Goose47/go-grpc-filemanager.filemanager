@@ -12,7 +12,7 @@ import (
 )
 
 type FileSaver interface {
-	SaveFile(ctx context.Context, filename string, data []byte) (int, error)
+	SaveFile(ctx context.Context, filename string) (io.WriteCloser, error)
 }
 type FileProvider interface {
 	File(ctx context.Context, filename string) (io.ReadCloser, error)
@@ -37,25 +37,26 @@ func New(
 	}
 }
 
-func (s *Storage) SaveFile(ctx context.Context, fileData []byte) (int, string, error) {
+func (s *Storage) FileWriter(ctx context.Context) (io.WriteCloser, string, error) {
 	const op = "storage.SaveFile"
 
 	filename := random.String(20)
 
 	log := s.log.With(slog.String("op", op), slog.String("filename", filename))
 
-	log.Info("trying to save file")
+	log.Info("trying to create file")
 
-	bytes, err := s.fileSaver.SaveFile(ctx, filename, fileData)
+	file, err := s.fileSaver.SaveFile(ctx, filename)
+
 	if err != nil {
-		log.Error("failed to save file", slog.Any("error", err))
+		log.Error("failed to create file", slog.Any("error", err))
 
-		return 0, "", fmt.Errorf("%s: %w", op, err)
+		return nil, "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Info("file saved successfully")
+	log.Info("file created successfully")
 
-	return bytes, filename, nil
+	return file, filename, nil
 }
 
 func (s *Storage) ListFiles(ctx context.Context) ([]models.File, error) {

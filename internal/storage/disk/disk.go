@@ -23,31 +23,25 @@ func New(storagePath string) *Disk {
 	}
 }
 
-// SaveFile saves file from byte array
-func (d *Disk) SaveFile(ctx context.Context, filename string, data []byte) (int, error) {
+// SaveFile saves file from byte array. Returns file that must be closed
+func (d *Disk) SaveFile(ctx context.Context, filename string) (io.WriteCloser, error) {
 	const op = "disk.SaveFile"
 
 	fullPath := path.Join(d.BasePath, filename)
 
 	if _, err := os.Stat(fullPath); err == nil {
-		return 0, fmt.Errorf("%s: %w", op, storage.ErrFileExists)
+		return nil, fmt.Errorf("%s: %w", op, storage.ErrFileExists)
 	}
 
 	file, err := os.Create(fullPath)
 	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-	defer file.Close()
-
-	n, err := file.Write(data)
-	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return n, nil
+	return file, nil
 }
 
-// File reads file specified in filename and returns its contents
+// File returns file Reader that must be closed
 func (d *Disk) File(ctx context.Context, filename string) (io.ReadCloser, error) {
 	const op = "disk.SaveFile"
 
