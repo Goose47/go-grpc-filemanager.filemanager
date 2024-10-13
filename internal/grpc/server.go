@@ -83,6 +83,21 @@ func (s *serverAPI) List(
 		Files: filesInfo,
 	}, nil
 }
+
+type streamWriter struct {
+	stream gen.FileManager_FileServer
+}
+
+func (w streamWriter) Write(p []byte) (int, error) {
+	err := w.stream.Send(&gen.FileResponse{
+		Chunk: p,
+	})
+	if err != nil {
+		return 0, errors.New("error while sending file chunk")
+	}
+	return len(p), nil
+}
+
 func (s *serverAPI) File(
 	in *gen.FileRequest,
 	stream gen.FileManager_FileServer,
@@ -92,8 +107,6 @@ func (s *serverAPI) File(
 	}
 
 	reader, err := s.storage.FileReader(stream.Context(), in.Filename)
-	defer reader.Close()
-
 	if err != nil {
 		if errors.Is(err, storage.ErrFileNotFound) {
 			return status.Error(codes.InvalidArgument, err.Error())
@@ -101,25 +114,15 @@ func (s *serverAPI) File(
 
 		return status.Error(codes.Internal, "failed to retrieve file")
 	}
+	defer reader.Close()
 
-	const chunkSize = 1024 // chunk size in bytes
-	buf := make([]byte, chunkSize)
+	writer := streamWriter{
+		stream: stream,
+	}
 
-	for {
-		n, err := reader.Read(buf)
-		if err != nil && !errors.Is(err, io.EOF) {
-			return status.Error(codes.Internal, "error while writing file")
-		}
-		if n == 0 {
-			break
-		}
-
-		err = stream.Send(&gen.FileResponse{
-			Chunk: buf[:n],
-		})
-		if err != nil {
-			return status.Error(codes.Internal, "error while writing file")
-		}
+	_, err = io.Copy(writer, reader)
+	if err != nil {
+		return status.Error(codes.Internal, "error while writing file")
 	}
 
 	return nil
